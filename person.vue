@@ -7,10 +7,10 @@
           <el-tree :data="orgList" node-key="id" highlight-current  ref="treeBox" :props="propsTree" :expand-on-click-node="false" :filter-node-method="filterNode" @node-click="nodeClick"></el-tree>
         </li>
         <li v-loading="UserLoading">
-          <el-input placeholder="输入人员名称进行筛选" v-model="filterPerson" clearable></el-input>
+          <el-input placeholder="输入名称进行筛选" v-model="filterPerson" clearable></el-input>
           <div v-if="userList.length>0" style="margin-top: 5px;text-align: left;">
             <el-checkbox :indeterminate="isIndeterminate" v-model="checkAll" @change="CheckAllPerson">全选</el-checkbox>
-            <span>（会议人员）</span>
+            <span>（对象）</span>
             <div style="margin-top:15px;margin-left:20px;">
               <el-checkbox-group v-model="cities" @change="RadioPerson" class="dialigGroup">
                   <span style="display:block;box-sizing: border-box;padding: 5px" v-for="item in userList" :key="item.id">
@@ -23,14 +23,12 @@
         </li>
       </ul>
     </div>
-    <el-button type="primary" size="small"  @click="outcome" style="margin-top: 20px;" >任务派发对象名单</el-button>
+    <el-button type="primary" size="small"  @click="outcome" style="margin-top: 20px;" >对象名单</el-button>
   </div>
 </template>
 
 <script>
-import { getAllOrg } from '@/api/bulletinBoard'; // 部门列表
-import { getAllPage } from "@/api/departmental/departmentalPersonnel"; // 对应部门人员列表
-import { getTokenMap } from "@/utils/auth";
+
 export default {
   props: {
     array:{
@@ -44,9 +42,9 @@ export default {
     return {
       OrgLoading:true,
       UserLoading:true,
-      filterText: null, // 过滤部门
-      orgList:[],// 部门列表
-      orgObj:{ // 当前点击的部门对象
+      filterText: null, 
+      orgList:[],
+      orgObj:{ 
         id:undefined,
         label:undefined
       },
@@ -54,13 +52,13 @@ export default {
         children: 'children',
         label: 'label'
       },
-      filterPerson:null, // 过滤人员
+      filterPerson:null, // 过滤
       isIndeterminate: false, // 半选状态，ture:为半选
       checkAll: false,//全选标识
-      userList: [],//点击部门后获取的部门人员列表
-      userMap:[],//点击部门后获取的部门人员列表,克隆一份，目的是在筛选过滤人员时用到
-      cities: [],//多选框选中的人员列表
-      personRoster:[], // 最终选中的人员列表
+      userList: [],//
+      userMap:[],//
+      cities: [],//多选框选中的列表
+      personRoster:[], // 最终选中的列表
     }
   },
   watch: {
@@ -75,10 +73,10 @@ export default {
       },
       immediate: true,
     },
-    filterText(val) { // 过滤部门
+    filterText(val) {
       this.$refs.treeBox.filter(val);
     },
-    filterPerson(val) { // 过滤人员
+    filterPerson(val) { 
       this.checkAll = false  //初始化全选状态
       this.isIndeterminate = false  //初始化全选状态
       if(val){
@@ -112,7 +110,7 @@ export default {
 
   },
   methods: {
-    // 获取部门列表树
+    
     async getAllOrg() {
       this.OrgLoading = true;
       let res = await getAllOrg();
@@ -129,7 +127,7 @@ export default {
       }
       this.OrgLoading = false;
     },
-    // 获取对应部门人员列表
+   
     async getAllPage() {
       this.UserLoading = true;
       let res = await getAllPage({page: 1,limit: 100,organId: this.orgObj.id,});
@@ -142,7 +140,7 @@ export default {
       }
       this.UserLoading = false;
     },
-    // 处理人员名单-判断该部门的人员列表中哪些人员已经选择了
+   
     handlePerson(){
       this.cities = [];
       this.checkAll = false;
@@ -160,19 +158,19 @@ export default {
       this.checkAll = this.cities.length === this.userList.length;
       this.isIndeterminate = this.cities.length > 0 && this.cities.length < this.userList.length;
     },
-    // tree组件-节点过滤
+   
     filterNode(value, data) {
       if (!value) return true;
       return data.label.indexOf(value) !== -1; // 注意：这里的label要与 propsTree里的配label字段相同
     },
-    // 点击部门事件
+   
     nodeClick(data) {
       this.orgObj.id = data.id;
       this.orgObj.label = data.label;
       this.filterPerson = undefined;
       this.getAllPage();
     },
-    // 全选人员
+    
     CheckAllPerson(boolean) {
       this.isIndeterminate = false;
       let arr = [];
@@ -194,31 +192,31 @@ export default {
         }
       }
     },
-    // 单选人员-返回的是勾选中数组
+    
     RadioPerson(arr) {
       let checkedCount = arr.length;
       this.checkAll = checkedCount === this.userList.length;
       this.isIndeterminate = checkedCount > 0 && checkedCount < this.userList.length;
-      this.addPerson(arr) // 判断这次单选了几个人员，重新处理最终选择的人员列表（personRoster）
+      this.addPerson(arr) 
     },
-    // 单选后的人员
+   
     addPerson(val){
-      // 这里的目的是先把这个部门人员列表从最终选择的人员列表（personRoster）中全都删除掉，然后再把单选中的数组赋给personRoster
+     
       for(let v of this.userList){
         let string = v.id+"-"+v.name;
         let index = this.personRoster.indexOf(string);
         if(index>-1) this.personRoster.splice(index,1);
       }
-      // 把单选中的数组重新赋给personRoster,要确保赋值的对象obj在personRoster中不存在
+      
       for(let obj of val){
         let index = this.personRoster.indexOf(obj);
         if(index<0) this.personRoster.push(obj);
       }
     },
-    // 返回最终人员列表（personRoster）
+   
     outcome(){
       let arr = [];
-      for(let v of this.personRoster){ // 这里的v是id+'-'+name的字符串
+      for(let v of this.personRoster){ 
         let obj = {id:v.split("-")[0],name:v.split("-")[1]}
         arr.push(obj)
       }
